@@ -1,11 +1,10 @@
 import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { APP_PIPE } from '@nestjs/core';
 import { TerminusModule } from '@nestjs/terminus';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { ZodValidationPipe } from 'nestjs-zod';
-import databaseConfig from './config/database.config';
+import { DatabaseConfigModule } from './config/database/database.module';
 import { HealthController } from './health.controller';
 import { AuthModule } from './modules/auth/auth.module';
 import { PermissionsModule } from './modules/permissions/permissions.module';
@@ -16,15 +15,9 @@ import { UsersModule } from './modules/users/users.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [databaseConfig],
+      envFilePath: '.env',
     }),
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        ...configService.get('database'),
-      }),
-    }),
+    DatabaseConfigModule,
     TerminusModule,
     HttpModule,
     AuthModule,

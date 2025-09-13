@@ -45,4 +45,15 @@ export class AuthController {
   getProfile(@Request() req) {
     return req.user;
   }
+
+  @Post('refresh')
+  @ApiOperation({ summary: 'Renovar access token usando refresh token' })
+  @ApiResponse({ status: 200, description: 'Token renovado com sucesso' })
+  async refresh(@Body('refreshToken') refreshToken: string) {
+    try {
+      return await this.authService.refreshToken(refreshToken);
+    } catch (error) {
+      throw new UnauthorizedException('Refresh token inválido ou expirado');
+    }
+  }
 }
