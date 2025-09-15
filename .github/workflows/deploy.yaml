@@ -1,0 +1,66 @@
+name: Deploy to production
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'src/**'
+      - 'nest-cli.json'
+      - 'package.json'
+      - 'tsconfig.json'
+      - 'tsconfig.build.json'
+
+jobs:
+  deploy:
+    name: Build, Test and Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build the project
+        run: pnpm run build
+
+      - name: Run unit tests
+        run: pnpm run test
+
+      # O teste e2e pode precisar de um banco de dados ou outras configurações.
+      # Se ele for complexo, considere rodá-lo em um ambiente separado.
+      - name: Run e2e tests
+        run: pnpm run test:e2e
+
+      # Esta etapa copia a pasta 'dist' (com o código compilado) e os arquivos
+      # de gerenciamento de pacotes para o seu servidor EC2.
+      - name: Copy files to EC2
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.AWS_SSH_KEY }}
+          source: 'dist,package.json,pnpm-lock.yaml'
+          target: '~/app' # Diretório de destino no servidor
+
+      # Após copiar os arquivos, esta etapa conecta-se via SSH e executa os
+      # comandos para instalar dependências e reiniciar a aplicação com PM2.
+      - name: Deploy and Restart Server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.AWS_SSH_KEY }}
+          script: |
+            cd ~/app
+            pnpm install --prod
+            pm2 reload app || pm2 start dist/main.js --name app

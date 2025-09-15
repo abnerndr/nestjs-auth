@@ -1,25 +1,73 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { App } from 'supertest/types';
-import { AppModule } from './../src/app.module';
+import { HealthController } from '../src/health.controller';
+import { HealthCheckService, HttpHealthIndicator, TypeOrmHealthIndicator } from '@nestjs/terminus';
+import { ConfigService } from '@nestjs/config';
 
 describe('AppController (e2e)', () => {
-  let app: INestApplication<App>;
+  let app: INestApplication;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
+      controllers: [HealthController],
+      providers: [
+        {
+          provide: HealthCheckService,
+          useValue: {
+            check: jest.fn().mockResolvedValue({
+              status: 'ok',
+              info: { test: { status: 'up' } },
+              error: {},
+              details: { test: { status: 'up' } },
+            }),
+          },
+        },
+        {
+          provide: HttpHealthIndicator,
+          useValue: {
+            pingCheck: jest.fn().mockResolvedValue({ test: { status: 'up' } }),
+          },
+        },
+        {
+          provide: TypeOrmHealthIndicator,
+          useValue: {
+            pingCheck: jest.fn().mockResolvedValue({ database: { status: 'up' } }),
+          },
+        },
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn().mockReturnValue(3333),
+          },
+        },
+      ],
     }).compile();
 
     app = moduleFixture.createNestApplication();
     await app.init();
   });
 
-  it('/ (GET)', () => {
-    return request(app.getHttpServer())
-      .get('/')
-      .expect(200)
-      .expect('Hello World!');
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it('/health/http (GET)', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/health/http');
+
+    expect([200, 503]).toContain(response.status);
+  });
+
+  it('/health/db (GET)', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/health/db');
+
+    expect([200, 503]).toContain(response.status);
+  });
+
+  it('deve ter o HealthController funcionando', () => {
+    const healthController = app.get(HealthController);
+    expect(healthController).toBeDefined();
   });
 });

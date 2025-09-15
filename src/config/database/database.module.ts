@@ -1,9 +1,9 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Permission } from 'src/entities/permission.entity';
-import { Role } from 'src/entities/role.entity';
-import { User } from 'src/entities/user.entity';
+import { Permission } from '../../entities/permission.entity';
+import { Role } from '../../entities/role.entity';
+import { User } from '../../entities/user.entity';
 
 @Global()
 @Module({
