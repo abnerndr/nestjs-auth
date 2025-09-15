@@ -13,11 +13,11 @@ import { User } from '../src/entities/user.entity';
       inject: [ConfigService],
       useFactory: () => ({
         type: 'better-sqlite3',
-        database: './test.db', // Arquivo temporário para testes
+        database: './test.db',
         entities: [User, Role, Permission],
-        synchronize: true, // Cria as tabelas automaticamente
-        logging: false, // Desabilita logs durante os testes
-        dropSchema: true, // Limpa o schema a cada execução
+        synchronize: true,
+        logging: false,
+        dropSchema: true,
       }),
     }),
     TypeOrmModule.forFeature([User, Role, Permission]),
