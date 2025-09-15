@@ -14,7 +14,8 @@ async function bootstrap() {
   app.useGlobalPipes(new ZodValidationPipe());
   await app.listen(process.env.PORT ?? 3000, async () => {
     Logger.debug(`Application is running on: ${await app.getUrl()}`);
-    Logger.debug(`Swagger is running on: ${await app.getUrl()}/docs`);
+    Logger.debug(`Swagger is running on: ${await app.getUrl()}/docs-swagger`);
+    Logger.debug(`Documentation is running on: ${await app.getUrl()}/docs`);
   });
 }
 bootstrap();
